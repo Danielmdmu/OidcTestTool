@@ -1,0 +1,3 @@
+﻿ClientId: "topicpilot-dev"
+IssuerUrl: "https://keycloak.docufy.de/auth/realms/tp-test"
+Scope: "openid profile"
