@@ -1,6 +1,7 @@
 ﻿using IdentityModel.OidcClient;
 using System;
 using System.IO;
+using System.Reflection;
 using YamlDotNet.Serialization;
 
 namespace NetCoreConsoleClient.Configuration
@@ -14,7 +15,7 @@ namespace NetCoreConsoleClient.Configuration
         public ConfigLoader(string fileName)
         {
             this.fileName = fileName;
-            directoryPath = AppDomain.CurrentDomain.BaseDirectory;
+            directoryPath = Environment.CurrentDirectory;
             configfileFullPath = Path.Combine(directoryPath, fileName);
         }
 

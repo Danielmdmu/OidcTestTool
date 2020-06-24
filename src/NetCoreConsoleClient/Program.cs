@@ -19,6 +19,10 @@ namespace ConsoleClientWithBrowser
             var configLoader = new ConfigLoader("config.yaml");
             var config = configLoader.LoadConfigFromFile();
 
+            Console.WriteLine("OIDC-Config:");
+            config.PrintToConsole();
+
+            Console.WriteLine("\n");
             Console.WriteLine("+-----------------------+");
             Console.WriteLine("|  Sign in with OIDC    |");
             Console.WriteLine("+-----------------------+");
