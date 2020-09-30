@@ -1,7 +1,6 @@
 ﻿using IdentityModel.OidcClient;
 using System;
 using System.IO;
-using System.Reflection;
 using YamlDotNet.Serialization;
 
 namespace NetCoreConsoleClient.Configuration
@@ -34,6 +33,8 @@ namespace NetCoreConsoleClient.Configuration
                 oidcOptions.ClientId = config.ClientId;
                 oidcOptions.FilterClaims = false;
                 oidcOptions.Policy.RequireAccessTokenHash = false;
+                oidcOptions.Policy.Discovery.ValidateIssuerName = false;
+                oidcOptions.Policy.Discovery.ValidateEndpoints = false;
                 oidcOptions.Flow = OidcClientOptions.AuthenticationFlow.AuthorizationCode;
                 oidcOptions.ResponseMode = OidcClientOptions.AuthorizeResponseMode.Redirect;
             }

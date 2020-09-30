@@ -1,3 +1,14 @@
-﻿ClientId: "topicpilot-dev"
-IssuerUrl: "https://keycloak.docufy.de/auth/realms/tp-test"
+﻿#ClientId: testAzureAdWithKeycloak  #keycloak
+#IssuerUrl: "https://keycloak.docufy.de/auth/realms/AzureAdTest" #keycloak
+
+
+#ClientId: "67a9ad31-7fd6-4ffe-a955-f0bd0d1d8554" #AzureAD
+# IssuerUrl: "https://login.microsoftonline.com/400ceb1f-a27c-4583-83f4-0ace199d62f8" #AzureAD
 Scope: "openid profile"
+
+
+#ClientId: s3o9WgEQM942fiYqsr9OuASlsYrSrJxh #Auth0
+#IssuerUrl: https://dev-5ytim5hi.eu.auth0.com/ #Auth0
+
+ClientId: trumpfTest
+IssuerUrl: https://keycloak.docufy.de/auth/realms/tp-test

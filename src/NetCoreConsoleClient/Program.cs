@@ -1,9 +1,7 @@
 ﻿using IdentityModel.OidcClient;
 using NetCoreConsoleClient.Configuration;
-using Newtonsoft.Json.Linq;
 using Serilog;
 using System;
-using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace ConsoleClientWithBrowser
@@ -37,8 +35,9 @@ namespace ConsoleClientWithBrowser
         {
             // create a redirect URI using an available port on the loopback address. requires the
             // OP to allow random ports on 127.0.0.1 - otherwise set a static port
-            var browser = new SystemBrowser();
+            var browser = new SystemBrowser(3000);
             string redirectUri = string.Format($"http://127.0.0.1:{browser.Port}");
+            //string redirectUri = "https://keycloak.docufy.de/auth/realms/AzureAdTest/broker/oidc/endpoint/auth";
 
             //var options = new OidcClientOptions
             //{

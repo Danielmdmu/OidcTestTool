@@ -13,100 +13,13 @@ using System.Threading.Tasks;
 
 namespace ConsoleClientWithBrowser
 {
-    public class SystemBrowser : IBrowser
-    {
-        public int Port { get; }
-        private readonly string _path;
-
-        public SystemBrowser(int? port = null, string path = null)
-        {
-            _path = path;
-
-            if (!port.HasValue)
-            {
-                Port = GetRandomUnusedPort();
-            }
-            else
-            {
-                Port = port.Value;
-            }
-        }
-
-        private int GetRandomUnusedPort()
-        {
-            var listener = new TcpListener(IPAddress.Loopback, 0);
-            listener.Start();
-            var port = ((IPEndPoint)listener.LocalEndpoint).Port;
-            listener.Stop();
-            return port;
-        }
-
-        public async Task<BrowserResult> InvokeAsync(BrowserOptions options)
-        {
-            using (var listener = new LoopbackHttpListener(Port, _path))
-            {
-                OpenBrowser(options.StartUrl);
-
-                try
-                {
-                    var result = await listener.WaitForCallbackAsync();
-                    if (String.IsNullOrWhiteSpace(result))
-                    {
-                        return new BrowserResult { ResultType = BrowserResultType.UnknownError, Error = "Empty response." };
-                    }
-
-                    return new BrowserResult { Response = result, ResultType = BrowserResultType.Success };
-                }
-                catch (TaskCanceledException ex)
-                {
-                    return new BrowserResult { ResultType = BrowserResultType.Timeout, Error = ex.Message };
-                }
-                catch (Exception ex)
-                {
-                    return new BrowserResult { ResultType = BrowserResultType.UnknownError, Error = ex.Message };
-                }
-            }
-        }
-
-        public static void OpenBrowser(string url)
-        {
-            try
-            {
-                Process.Start(url);
-            }
-            catch
-            {
-                // hack because of this: https://github.com/dotnet/corefx/issues/10361
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    url = url.Replace("&", "^&");
-                    Process.Start(new ProcessStartInfo("cmd", $"/c start {url}") { CreateNoWindow = true });
-                }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                {
-                    Process.Start("xdg-open", url);
-                }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                {
-                    Process.Start("open", url);
-                }
-                else
-                {
-                    throw;
-                }
-            }
-        }
-    }
-
     public class LoopbackHttpListener : IDisposable
     {
-        const int DefaultTimeout = 60 * 5; // 5 mins (in seconds)
+        private const int DefaultTimeout = 60 * 5; // 5 mins (in seconds)
 
-        IWebHost _host;
-        TaskCompletionSource<string> _source = new TaskCompletionSource<string>();
-        string _url;
-
-        public string Url => _url;
+        private IWebHost _host;
+        private TaskCompletionSource<string> _source = new TaskCompletionSource<string>();
+        private string _url;
 
         public LoopbackHttpListener(int port, string path = null)
         {
@@ -114,6 +27,7 @@ namespace ConsoleClientWithBrowser
             if (path.StartsWith("/")) path = path.Substring(1);
 
             _url = $"http://127.0.0.1:{port}/{path}";
+            //_url = "https://keycloak.docufy.de/auth/realms/AzureAdTest/broker/oidc/endpoint/auth";
 
             _host = new WebHostBuilder()
                 .UseKestrel()
@@ -122,6 +36,8 @@ namespace ConsoleClientWithBrowser
                 .Build();
             _host.Start();
         }
+
+        public string Url => _url;
 
         public void Dispose()
         {
@@ -132,7 +48,18 @@ namespace ConsoleClientWithBrowser
             });
         }
 
-        void Configure(IApplicationBuilder app)
+        public Task<string> WaitForCallbackAsync(int timeoutInSeconds = DefaultTimeout)
+        {
+            Task.Run(async () =>
+            {
+                await Task.Delay(timeoutInSeconds * 1000);
+                _source.TrySetCanceled();
+            });
+
+            return _source.Task;
+        }
+
+        private void Configure(IApplicationBuilder app)
         {
             app.Run(async ctx =>
             {
@@ -181,16 +108,91 @@ namespace ConsoleClientWithBrowser
                 ctx.Response.Body.Flush();
             }
         }
+    }
 
-        public Task<string> WaitForCallbackAsync(int timeoutInSeconds = DefaultTimeout)
+    public class SystemBrowser : IBrowser
+    {
+        private readonly string _path;
+
+        public SystemBrowser(int? port = null, string path = null)
         {
-            Task.Run(async () =>
-            {
-                await Task.Delay(timeoutInSeconds * 1000);
-                _source.TrySetCanceled();
-            });
+            _path = path;
 
-            return _source.Task;
+            if (!port.HasValue)
+            {
+                Port = GetRandomUnusedPort();
+            }
+            else
+            {
+                Port = port.Value;
+            }
+        }
+
+        public int Port { get; }
+
+        public static void OpenBrowser(string url)
+        {
+            try
+            {
+                Process.Start(url);
+            }
+            catch
+            {
+                // hack because of this: https://github.com/dotnet/corefx/issues/10361
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    url = url.Replace("&", "^&");
+                    Process.Start(new ProcessStartInfo("cmd", $"/c start {url}") { CreateNoWindow = true });
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    Process.Start("xdg-open", url);
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    Process.Start("open", url);
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+
+        public async Task<BrowserResult> InvokeAsync(BrowserOptions options)
+        {
+            using (var listener = new LoopbackHttpListener(Port, _path))
+            {
+                OpenBrowser(options.StartUrl);
+
+                try
+                {
+                    var result = await listener.WaitForCallbackAsync();
+                    if (String.IsNullOrWhiteSpace(result))
+                    {
+                        return new BrowserResult { ResultType = BrowserResultType.UnknownError, Error = "Empty response." };
+                    }
+
+                    return new BrowserResult { Response = result, ResultType = BrowserResultType.Success };
+                }
+                catch (TaskCanceledException ex)
+                {
+                    return new BrowserResult { ResultType = BrowserResultType.Timeout, Error = ex.Message };
+                }
+                catch (Exception ex)
+                {
+                    return new BrowserResult { ResultType = BrowserResultType.UnknownError, Error = ex.Message };
+                }
+            }
+        }
+
+        private int GetRandomUnusedPort()
+        {
+            var listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start();
+            var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+            listener.Stop();
+            return port;
         }
     }
 }
